@@ -10,7 +10,10 @@
 library(shiny)
 library(DT)
 library(ggplot2)
+<<<<<<< HEAD
 library(GGally)
+=======
+>>>>>>> 78cd403265839882641f8d1456a1abcaf38b5a10
 library(ggiraph)
 library(tidyverse)
 library(magrittr)
@@ -40,14 +43,18 @@ scatter <- function(data, x, y, tip, rows) {
         dat %<>% mutate(selected__ = id_disp_ %in% rows)
         dat_filt <- dat %>% filter(selected__)
         
+<<<<<<< HEAD
         cols <- dat$color_disp_ %>% setNames(dat$group_disp_) %>% .[dat$group_disp_]
         
+=======
+>>>>>>> 78cd403265839882641f8d1456a1abcaf38b5a10
         gr <- ggplot(dat) + 
             geom_point_interactive(aes(!!as.name(x), !!as.name(y), tooltip = tip,
                                        data_id = id_disp_)) +
             geom_point_interactive(data = dat_filt,
                                    aes(!!as.name(x), !!as.name(y), tooltip = tip,
                                        data_id = id_disp_, colour = group_disp_)) + 
+<<<<<<< HEAD
             labs(colour = "Row ID") +
             scale_colour_manual_interactive(values = cols,
                                             labels = dat_filt$tip) +
@@ -69,13 +76,27 @@ scatter <- function(data, x, y, tip, rows) {
         legend <- NULL
     }
     list(gr, legend)
+=======
+            scale_colour_manual_interactive(values = dat$color_disp_ %>% setNames(dat$group_disp_)) +
+            theme(legend.position="none")
+    } else {
+        gr <- ggplot(dat) + 
+            geom_point_interactive(aes(!!as.name(x), !!as.name(y), tooltip = tip,
+                                       data_id = id_disp_))
+    }
+    gr
+>>>>>>> 78cd403265839882641f8d1456a1abcaf38b5a10
 }
 
 # Define UI for application
 ui <- fluidPage(
 
     # Application title
+<<<<<<< HEAD
     titlePanel("Interactive Volcano Plot"),
+=======
+    titlePanel("Old Faithful Geyser Data"),
+>>>>>>> 78cd403265839882641f8d1456a1abcaf38b5a10
 
     fluidRow(column(3,
                     fileInput("file_dat", "Choose File",
@@ -93,8 +114,12 @@ ui <- fluidPage(
                                              choices="")),
                     wellPanel(selectInput("hover_cols", "Hover Display:", 
                                           choices="", multiple = TRUE))),
+<<<<<<< HEAD
              column(2, plotOutput("legend")),
              column(7, girafeOutput("volcano"))),
+=======
+             column(9, girafeOutput("volcano"))),
+>>>>>>> 78cd403265839882641f8d1456a1abcaf38b5a10
 
     fluidRow(DTOutput("data_tbl"))
 )
@@ -102,8 +127,11 @@ ui <- fluidPage(
 # Define server logic 
 server <- function(input, output, session) {
     
+<<<<<<< HEAD
     legend_val <- reactiveValues(legend = NULL)
     
+=======
+>>>>>>> 78cd403265839882641f8d1456a1abcaf38b5a10
     data_df_disp <- reactive({
         req(input$file_dat)
         
@@ -171,11 +199,14 @@ server <- function(input, output, session) {
     })
     
     
+<<<<<<< HEAD
     legend <- reactive({
         
     })
     
     
+=======
+>>>>>>> 78cd403265839882641f8d1456a1abcaf38b5a10
     
     observe({
         updateSelectInput(session, "FC_col", choices = colnames(data_df()),
@@ -193,8 +224,11 @@ server <- function(input, output, session) {
         
         gr <- scatter(data_df_disp(), input$FC_col, input$pv_col, input$hover_cols,
                       selected_rows())
+<<<<<<< HEAD
         legend_val$legend <- gr[[2]]
         gr <- gr[[1]]
+=======
+>>>>>>> 78cd403265839882641f8d1456a1abcaf38b5a10
         girafe(ggobj = gr) %>% 
             girafe_options(opts_zoom(min=.5, max = 2))
         
@@ -203,6 +237,7 @@ server <- function(input, output, session) {
 
     output$data_tbl <- renderDT({
         dat <- data_df_usr()
+<<<<<<< HEAD
         datatable(dat %>% select(-ends_with("_disp_")), 
                   rownames = FALSE, filter = "top")
     })
@@ -210,6 +245,11 @@ server <- function(input, output, session) {
     
     output$legend <- renderPlot(legend_val$legend)
     
+=======
+        datatable(dat %>% select(-ends_with("_disp_")), rownames = FALSE, filter = "top")
+    })
+    
+>>>>>>> 78cd403265839882641f8d1456a1abcaf38b5a10
 }
 
 # Run the application 
