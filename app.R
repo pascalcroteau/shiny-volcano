@@ -10,6 +10,7 @@
 library(shiny)
 library(DT)
 library(ggplot2)
+library(scales)
 library(GGally)
 library(ggiraph)
 library(tidyverse)
@@ -24,8 +25,16 @@ ggplot_colors <- function(n) {
 }
 
 
+scale_choices <- c(Raw="raw", Log2="log2", Log10="log10", `Square Root`="sqrt")
 
-scatter <- function(data, x, y, tip, rows) {
+scale_x_log2 <- function(...) scale_x_continuous(..., trans = log2_trans())
+scale_y_log2rev <- function(...) scale_y_continuous(..., trans = c("log2", "reverse"))
+scale_y_log10rev <- function(...) scale_y_continuous(..., trans = c("log10", "reverse"))
+scale_y_sqrtrev <- function(...) scale_y_continuous(..., trans = c("sqrt", "reverse"))
+
+
+scatter <- function(data, x, y, x_scale, y_scale, tip, rows) {
+    
     tip_disp <- paste(tip, "disp_", sep = "_")
     tips <- map2(tip, tip_disp, ~ paste(.x, data[[.y]], sep = ": ")) %>% 
         set_names(tip_disp)
@@ -68,6 +77,18 @@ scatter <- function(data, x, y, tip, rows) {
             theme_bw()
         legend <- NULL
     }
+    
+    
+    if (x_scale == "log2") gr <- gr + scale_x_log2()
+    if (x_scale == "log10") gr <- gr + scale_x_log10()
+    if (x_scale == "sqrt") gr <- gr + scale_x_sqrt()
+    
+    gr <- gr + scale_y_reverse()
+    
+    if (y_scale == "log2") gr <- gr + scale_y_log2rev()
+    if (y_scale == "log10") gr <- gr + scale_y_log10rev()
+    if (y_scale == "sqrt") gr <- gr + scale_y_sqrtrev()
+    
     list(gr, legend)
 }
 
@@ -77,7 +98,7 @@ ui <- fluidPage(
     # Application title
     titlePanel("Interactive Volcano Plot"),
 
-    fluidRow(column(3,
+    fluidRow(column(4,
                     fileInput("file_dat", "Choose File",
                               multiple = FALSE,
                               accept = c("text/csv",
@@ -86,15 +107,21 @@ ui <- fluidPage(
                                          ".csv",
                                          ".tsv"),
                               width = NULL),
-                    wellPanel(selectInput("FC_col", "Fold Change Column (x-axis):", 
-                                             choices="")),
                     
-                    wellPanel(selectInput("pv_col", "Score Column (x-axis):", 
-                                             choices="")),
+                    wellPanel(fluidRow(column(8, selectInput("FC_col", "Fold Change Column (x-axis):", 
+                                                    choices="")),
+                              column(4, selectInput("FC_scale", "Scale:", 
+                                                    choices="")))),
+                    
+                    wellPanel(fluidRow(column(8, selectInput("pv_col", "Score Column (y-axis):", 
+                                                             choices="")),
+                                       column(4, selectInput("pv_scale", "Scale:", 
+                                                             choices="")))),                          
+                    
                     wellPanel(selectInput("hover_cols", "Hover Display:", 
                                           choices="", multiple = TRUE))),
              column(2, plotOutput("legend")),
-             column(7, girafeOutput("volcano"))),
+             column(6, girafeOutput("volcano"))),
 
     fluidRow(DTOutput("data_tbl"))
 )
@@ -175,22 +202,31 @@ server <- function(input, output, session) {
         updateSelectInput(session, "FC_col", choices = colnames(data_df()),
                           selected = "")
         
+        updateSelectInput(session, "FC_scale", choices = scale_choices)
+        
         updateSelectInput(session, "pv_col", choices = colnames(data_df()),
                           selected = "")
+        
+        updateSelectInput(session, "pv_scale", choices = scale_choices)
         
         updateSelectInput(session, "hover_cols", choices = colnames(data_df()))
     })
     
     
     output$volcano <- renderGirafe({
-        req(input$FC_col, input$pv_col, input$hover_cols)
+        req(input$FC_col, input$pv_col, input$hover_cols, input$FC_scale,
+            input$pv_scale)
         
-        gr <- scatter(data_df_disp(), input$FC_col, input$pv_col, input$hover_cols,
-                      selected_rows())
+        gr <- scatter(data_df_disp(), input$FC_col, input$pv_col, input$FC_scale,
+                      input$pv_scale, input$hover_cols, selected_rows())
         legend_val$legend <- gr[[2]]
         gr <- gr[[1]]
-        girafe(ggobj = gr) %>% 
+        
+        girafe(ggobj = gr) %>%
             girafe_options(opts_zoom(min=.5, max = 2))
+
+        
+        
         
     })
     
